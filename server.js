@@ -16,11 +16,11 @@ const app = express();
 app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static assets (JS, CSS, images) from public/
-app.use(express.static(join(__dirname, "public")));
+// --- HTML routes FIRST (with no-cache headers so browsers never cache stale client code) ---
 
 // Homepage — render the audit tool UI
 app.get("/", (_req, res) => {
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   res.send(readFileSync(join(__dirname, "public", "index.html"), "utf8"));
 });
 
@@ -43,6 +43,7 @@ app.get("/universal-report", async (req, res) => {
     }
   }
   // Serve the interactive page (loads artifact from dataPath if present)
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(readFileSync(join(__dirname, "public", "universal-report.html"), "utf8"));
 });
@@ -61,8 +62,11 @@ app.post("/universal-report/run", async (req, res) => {
       authorizedScope: "Public, passive inspection only — no login, no form submission, no interactive content testing.",
     });
     // Always write a JSON artifact so the interactive page can reload by dataPath.
-    // The agent may return r.json, r.markdown-only, or both.
-    const artifact = r.json ?? { markdown: r.markdown, sections: r.sections, status: r.status };
+    // Merge markdown from r.markdown into the artifact (r.json has sections/score/etc
+    // but not the markdown string).
+    const artifact = r.json
+      ? { ...r.json, markdown: r.markdown || "" }
+      : { markdown: r.markdown || "", sections: r.sections, status: r.status };
     const fname = `ua-${Date.now()}.json`;
     const fpath = join(REPORT_DIR, fname);
     writeFileSync(fpath, JSON.stringify(artifact, null, 2), "utf8");
@@ -138,6 +142,11 @@ app.get("/api/report/pdf", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// --- Static assets LAST (so HTML routes with no-cache headers always win) ---
+
+// Serve static assets (JS, CSS, images) from public/
+app.use(express.static(join(__dirname, "public")));
 
 // Serve saved report JSON artifacts (for the interactive page to load)
 app.use("/reports", express.static(join(__dirname, "public", "reports")));
