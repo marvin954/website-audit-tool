@@ -1,0 +1,4 @@
+node_modules/
+public/reports/
+src/tmp/
+*.log

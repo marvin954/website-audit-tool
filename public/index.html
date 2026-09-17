@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Website Audit Tool</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#0f172a; color:#f8fafc; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.6; padding:24px; min-height:100vh; }
+  .wrap { max-width:800px; margin:0 auto; }
+  h1 { font-size:1.5rem; font-weight:700; margin-bottom:4px; }
+  .sub { color:#94a3b8; font-size:0.875rem; margin-bottom:24px; }
+
+  .input-bar { display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap; }
+  .url-input { flex:1; min-width:250px; background:#1e293b; border:1px solid #334155; border-radius:10px; padding:12px 16px; color:#f8fafc; font-size:1rem; font-family:inherit; outline:none; transition:border-color 0.15s; }
+  .url-input:focus { border-color:#38bdf8; }
+  .url-input::placeholder { color:#475569; }
+  .btn { background:#1e293b; color:#f8fafc; border:1px solid #334155; border-radius:10px; padding:12px 24px; font-size:0.9rem; font-weight:600; cursor:pointer; font-family:inherit; transition:all 0.15s; white-space:nowrap; }
+  .btn:hover { border-color:#38bdf8; color:#38bdf8; }
+  .btn:active { transform:translateY(1px); }
+  .btn-primary { background:#38bdf8; color:#0f172a; border-color:#38bdf8; }
+  .btn-primary:hover { background:#7dd3fc; border-color:#7dd3fc; color:#0f172a; }
+  .btn:disabled { opacity:0.4; cursor:not-allowed; pointer-events:none; }
+
+  .examples { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:28px; }
+  .example { background:#1e293b; border:1px solid #334155; border-radius:8px; padding:8px 14px; font-size:0.8rem; color:#94a3b8; cursor:pointer; transition:all 0.15s; }
+  .example:hover { border-color:#38bdf8; color:#f8fafc; }
+
+  .results { display:none; }
+  .results.visible { display:block; }
+
+  .score-card { background:#1e293b; border:1px solid #334155; border-radius:12px; padding:20px 24px; display:flex; align-items:center; gap:28px; margin-bottom:24px; flex-wrap:wrap; }
+  .score-big { display:flex; flex-direction:column; align-items:center; min-width:100px; }
+  .score-num { font-size:3rem; font-weight:800; line-height:1; }
+  .score-num small { font-size:1.2rem; color:#94a3b8; }
+  .score-band { display:inline-block; margin-top:4px; border-radius:999px; padding:3px 12px; font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; }
+  .stat { display:flex; flex-direction:column; gap:2px; font-size:0.85rem; }
+  .stat-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; color:#64748b; opacity:0.7; }
+  .stat-value { font-weight:600; }
+  .score-bar { width:100%; margin-top:10px; height:6px; background:#334155; border-radius:3px; overflow:hidden; }
+  .score-bar-inner { height:100%; border-radius:3px; }
+
+  .section-title { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:#64748b; opacity:0.7; margin:4px 0 12px 0; font-weight:600; }
+  .issue { background:#1e293b; border:1px solid #334155; border-radius:10px; padding:14px 18px; margin-bottom:10px; }
+  .issue-head { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .issue-badge { font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:999px; text-transform:uppercase; letter-spacing:0.04em; white-space:nowrap; }
+  .issue-text { font-weight:500; }
+  .issue-fix { font-size:0.9rem; color:#94a3b8; background:rgba(56,189,248,0.06); border-left:3px solid #38bdf8; padding:8px 12px; border-radius:0 6px 6px 0; white-space:pre-wrap; margin-top:6px; }
+  .fix-label { color:#38bdf8; font-weight:600; }
+
+  .all-good { background:rgba(34,197,94,0.1); border:1px solid #22c55e; color:#22c55e; padding:24px; border-radius:10px; font-size:1.1rem; font-weight:600; text-align:center; margin-bottom:20px; }
+  .unreachable { background:rgba(239,68,68,0.12); border:1px solid #ef4444; color:#ef4444; padding:16px 20px; border-radius:10px; font-weight:500; margin-bottom:20px; }
+
+  .export-bar { display:flex; gap:10px; justify-content:flex-end; margin:20px 0 16px 0; flex-wrap:wrap; }
+  .label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; align-self:center; margin-right:4px; }
+
+  .notes { background:#1e293b; border:1px solid #334155; border-radius:10px; padding:14px 18px; margin-top:10px; }
+  .notes-title { font-weight:700; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.06em; color:#64748b; margin-bottom:6px; }
+  .note { font-size:0.85rem; padding:2px 0; }
+
+  .footer { margin-top:24px; padding-top:12px; border-top:1px solid #334155; font-size:0.75rem; color:#64748b; text-align:center; }
+
+  .loading { text-align:center; padding:60px 20px; color:#94a3b8; }
+  .spinner { display:inline-block; width:28px; height:28px; border:3px solid #334155; border-top-color:#38bdf8; border-radius:50%; animation:spin 0.7s linear infinite; margin-bottom:12px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  @media print {
+    body { background:#fff; color:#0f172a; }
+    .input-bar, .examples, .export-bar, .footer { display:none; }
+    .score-num { color: var(--sc); }
+    .score-band { color: var(--sc); background: var(--sc); border-color: var(--sc); }
+    .issue-text { color:#b91c1c; }
+    .issue-fix, .issue-badge { color:#334155; }
+    .issue { background:#fff; border-color:#cbd5e1; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Website Audit Tool</h1>
+  <div class="sub">Audit any website — SEO, mobile, performance, security, accessibility. Get a plain-English report with fixes.</div>
+
+  <form id="auditForm" class="input-bar" onsubmit="startAudit(event)">
+    <input id="urlInput" class="url-input" type="url" placeholder="https://example.com" required autocomplete="url" spellcheck="false">
+    <button type="submit" id="auditBtn" class="btn btn-primary">Audit Site</button>
+  </form>
+
+  <div class="examples">
+    <span class="example" onclick="setUrl('https://armaintenancesolutions.com')">armaintenancesolutions.com</span>
+    <span class="example" onclick="setUrl('https://example.com')">example.com</span>
+    <span class="example" onclick="setUrl('https://httpbin.org/status/200')">httpbin.org (200)</span>
+  </div>
+
+  <div id="loading" class="loading" style="display:none">
+    <div class="spinner"></div>
+    <div>Auditing site…</div>
+  </div>
+
+  <div id="results" class="results">
+    <div class="score-card" id="scoreCard"></div>
+    <div id="unreachable" class="unreachable" style="display:none"></div>
+    <div id="allGood" class="all-good" style="display:none"></div>
+    <div class="section-title" id="issuesTitle" style="display:none">What's Wrong &amp; How to Fix It</div>
+    <div id="issues"></div>
+    <div id="notes" class="notes" style="display:none"></div>
+    <div class="export-bar">
+      <span class="label">Tools</span>
+      <button class="btn" onclick="openUniversalAudit()">📋 Universal Audit Report</button>
+      <span class="label" style="margin-left:10px;">Export</span>
+      <button class="btn" onclick="exportReport('pdf')">⬇ Download PDF report</button>
+      <button class="btn" onclick="exportReport('html')">⬇ Download HTML report</button>
+      <button class="btn" onclick="viewHtmlInTab()">View HTML in new tab</button>
+      <button class="btn" onclick="viewFullReport()">View full report page</button>
+    </div>
+    <div class="footer">Website Audit Tool — audit results reflect the site's state at the time of the scan.</div>
+  </div>
+
+  <div id="emptyState">
+    <div style="text-align:center; padding:40px 20px; color:#64748b;">
+      <div style="font-size:2rem; margin-bottom:12px;">🔍</div>
+      <div>Enter a URL above and click <strong style="color:#f8fafc;">Audit Site</strong></div>
+      <div style="margin-top:8px; font-size:0.85rem;">Get a score, issues, and plain-English fix instructions.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Domain name splitter (compound domains → readable business names) ──────
+const WORD_LIST = new Set([
+  "AR","MAINTENANCE","MAINTANCE","MAINT","MAINTAN","SOLUTIONS","SOLUTION","SERVICES","SERVICE",
+  "GROUP","INC","LLC","COMPANY","CONTRACTING","CONSTRUCTION","PROPERTIES","PROPERTY",
+  "MANAGEMENT","LANDSCAPING","LANDSCAPE","LAWN","REPAIR","INSTALLATION","INSTALL",
+  "TREE","TREES","IRRIGATION","ENGINEERING","TECHNOLOGY","TECHNOLOGIES","SECURITY",
+  "ROOFING","PLUMBING","HVAC","ELECTRICAL","ELECTRIC","PAINTING","GUTTERS","SIDING",
+  "FLOORING","REMODEL","REMODELING","DESIGN","BUILD","BUILDER","BUILDERS","SOLAR",
+  "EXTERIOR","INTERIOR","CLEANING","PRESSURE","WINDOW","DOORS","GARAGE","FENCE",
+  "DRIVEWAY","PATIO","PAVERS","POOL","MIAMI","BROWARD","PALM","BEACH","FORT",
+  "LAUDERDALE","LAKES","CORAL","SPRINGS","WESTON","MIRAMAR","HOLLYWOOD",
+  "DAVIE","PLANTATION","SUNRISE","BOCA","RATON","DELRAY","BOYNTON","SOUTH","FLORIDA",
+  "FL","COUNTY","COUNTIES","AREA","AREAS","SERVING","AC","HEATING",
+  "AIR","CONDITIONING","CONDITIONER","COOLING","ROOF","SIDING","GUTTER","PAINT",
+  "PEST","CONTROL","TERMITE","TERMITES","TREE","TRIMMING","REMOVAL","REMOVE",
+  "STUMP","GRINDING","FERTILIZATION","FERTILIZER","SOD","WEED","GRAVEL",
+  "HARDSCAPE","SOFTSCAPE","SPRINKLER","DRAINAGE","RETAINING","WALL","PATIO","PATIOS",
+  "CONCRETE","ASPHALT","SEALCOAT","SEALING","PAVING","PAVER","BRICK","STONE","FLAGSTONE",
+  "FLAGSTONES","MARBLE","GRANITE","SLATE","LIMESTONE","SAND","GRAVEL","MULCH","TOPSOIL",
+  "COMPOST","MOWING","MOWER","MOWED","EDGING","PRUNING","PRUNE","NEEDLE","PINE",
+  "OAK","MAPLE","PALMS","PALM","TROPICAL","EXOTIC","SHRUB","SHRUBS","BUSH","BUSHES",
+  "PLANT","PLANTS","FLOWER","FLOWERS","BED","BEDS","MULCH","BARK","ROCK","ROCKS",
+  "DECORATIVE","SYSTEMS","SYSTEM","ZONE","ZONES","VALVE",
+  "HEAD","HEADS","SPRAY","SPRAYS","DRIP","MICRO","WATER","WATERS","FLOW","FLOWS",
+  "PRESSURE","PSI","GPM","FORECAST","WEATHER","RAIN","STORM","CLEANUP","TRUNK","TREES",
+  "SAW","CHAINSAW","BOBCAT","SKID","STEER","EXCAVATOR","LOADER","TRUCK","TRUCKS",
+  "VAN","VANS","EQUIPMENT","EQUIP","TOOLS","TOOL","SAFETY","CERTIFIED","CERTIFICATION",
+  "LICENSE","LICENSED","LICENSES","CONTRACTOR","BONDED","INSURANCE","INSURED",
+  "GENERAL","LIABILITY","WORKERS","COMP","COMPENSATION","PHYSICAL","ADDRESS","PHONE",
+  "EMAIL","WEB","SITE","WEBSITE","ONLINE","MOBILE","RESPONSIVE","SEO","RANKING",
+  "GOOGLE","FACEBOOK","YELP","RATING","REVIEWS","TESTIMONIAL",
+  "TESTIMONIALS","FEEDBACK","CUSTOMER","CUSTOMERS","CLIENT","CLIENTS",
+  "SATISFACTION","SATISFIED","HAPPY","LOVED","TRUST","TRUSTED","EXPERT","EXPERTS",
+  "PRO","PROS","PROFESSIONAL","PROFESSIONALS","QUALITY","RELIABLE","FAST","SAME-DAY",
+  "EMERGENCY","24-HOUR","24/7","AVAILABLE","AFTER-HOURS","NIGHT","WEEKEND","WEEKENDS",
+  "HOLIDAY","HOLIDAYS","SEASON","SEASONAL","SPECIAL","OFFER","OFFERING","OFFERINGS",
+  "PACKAGE","PACKAGES","SERVICE","SERVICES","PLANS","PLAN","OPTIONS","OPTION","CHOICES",
+  "CHOICE","PRICING","PRICE","COSTS","COST","DEALS","DISCOUNT","SAVE","SAVINGS",
+  "BUDGET","AFFORDABLE","COMPETITIVE","COMPETITIVENESS","COMPETITOR","COMPETITORS",
+  "RESEARCH","COMPARISON","COMPOUND","MIXED","BLEND","BLENDING","AGE","AGED","AGING",
+].map((w) => w.toUpperCase()));
+
+function splitDomainName(raw) {
+  let s = raw.replace(/^https?:\/\//, "").replace(/\/.*/, "").replace(/\.[^.]+$/, "");
+  s = s.toUpperCase();
+  const tokens = [];
+  let i = 0;
+  const chars = s.split("");
+  while (i < chars.length) {
+    let found = null;
+    const maxLen = Math.min(chars.length - i, 22);
+    for (let len = maxLen; len >= 1; len--) {
+      const cand = chars.slice(i, i + len).join("");
+      if (WORD_LIST.has(cand)) { found = cand; break; }
+    }
+    if (found) { tokens.push(found); i += found.length; }
+    else {
+      let j = i; let chunk = "";
+      while (j < chars.length) {
+        chunk += chars[j];
+        if (WORD_LIST.has(chunk) || j - i >= 8) break;
+        j++;
+      }
+      if (chunk.length > 0) { tokens.push(chunk); i += chunk.length; }
+      else { tokens.push(chars[i]); i++; }
+    }
+  }
+  let result = tokens.join(" ").replace(/\s+/g, " ").trim();
+  result = result.replace(/\b\w/g, (c) => c.toUpperCase());
+  return result;
+}
+
+// ── UI state ────────────────────────────────────────────────────────────────
+let lastAudit = null;
+const $form = document.getElementById('auditForm');
+const $urlInput = document.getElementById('urlInput');
+const $auditBtn = document.getElementById('auditBtn');
+const $loading = document.getElementById('loading');
+const $results = document.getElementById('results');
+const $emptyState = document.getElementById('emptyState');
+const $scoreCard = document.getElementById('scoreCard');
+const $unreachable = document.getElementById('unreachable');
+const $allGood = document.getElementById('allGood');
+const $issuesTitle = document.getElementById('issuesTitle');
+const $issues = document.getElementById('issues');
+const $notes = document.getElementById('notes');
+
+function setUrl(u) { $urlInput.value = u; $urlInput.focus(); }
+function showLoading(show) {
+  $loading.style.display = show ? 'block' : 'none';
+  $auditBtn.disabled = show;
+  $urlInput.disabled = show;
+}
+function clearResults() {
+  $results.classList.remove('visible');
+  $results.style.display = 'none';
+  $emptyState.style.display = 'block';
+  $unreachable.style.display = 'none';
+  $allGood.style.display = 'none';
+  $issuesTitle.style.display = 'none';
+  $issues.innerHTML = '';
+  $notes.style.display = 'none';
+  $notes.innerHTML = '';
+  lastAudit = null;
+}
+
+function scoreColor(s) {
+  if (s >= 80) return '#22c55e';
+  if (s >= 60) return '#eab308';
+  if (s >= 40) return '#f97316';
+  return '#ef4444';
+}
+function scoreBand(s) {
+  if (s >= 80) return 'Excellent';
+  if (s >= 60) return 'Fair';
+  if (s >= 40) return 'Needs Work';
+  return 'Poor';
+}
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+async function startAudit(e) {
+  e.preventDefault();
+  const url = $urlInput.value.trim();
+  if (!url) return;
+  clearResults();
+  $emptyState.style.display = 'none';
+  $results.style.display = 'block';
+  showLoading(true);
+
+  try {
+    const res = await fetch('/api/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, timeoutMs: 20000 }),
+    });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+    const a = await res.json();
+    lastAudit = a;
+    renderResults(a);
+  } catch (err) {
+    $loading.style.display = 'none';
+    $auditBtn.disabled = false;
+    $urlInput.disabled = false;
+    $results.innerHTML = `<div class="unreachable" style="border-color:#f97316;color:#fcd34d;">⚠ ${esc(err.message)}</div>`;
+    $results.classList.add('visible');
+  }
+}
+
+function renderResults(a) {
+  showLoading(false);
+  $results.classList.add('visible');
+
+  const sc = scoreColor(a.score);
+  document.documentElement.style.setProperty('--sc', sc);
+  const band = scoreBand(a.score);
+  const clientName = splitDomainName(a.url);
+
+  // Score card
+  $scoreCard.innerHTML = `
+    <div class="score-big"><div class="score-num" style="color:${sc}">${a.score}<small>/100</small></div><div class="score-band" style="background:${sc}20;color:${sc};border:1px solid ${sc}40;">${band}</div></div>
+    <div class="stat"><span class="stat-label">Client</span><span class="stat-value">${esc(clientName)}</span></div>
+    <div class="stat"><span class="stat-label">Checks passed</span><span class="stat-value">${a.passed.count}/${a.passed.total}</span></div>
+    <div class="stat"><span class="stat-label">Issues</span><span class="stat-value">${a.issues.length}</span></div>
+    <div class="stat"><span class="stat-label">Response</span><span class="stat-value">${a.stats.responseMs}ms</span></div>
+    <div class="stat"><span class="stat-label">HTTP</span><span class="stat-value">${a.stats.httpStatus}</span></div>
+    <div class="stat"><span class="stat-label">Size</span><span class="stat-value">${a.stats.htmlKB}KB</span></div>
+    <div class="stat"><span class="stat-label">Words</span><span class="stat-value">${a.stats.wordCount}</span></div>
+    <div class="score-bar"><div class="score-bar-inner" style="width:${a.score}%;background:${sc}"></div></div>
+  `;
+
+  if (!a.reachable) {
+    $unreachable.style.display = 'block';
+    $unreachable.textContent = `✗ This site could not be reached. ${a.issues[0]?.issue ?? 'Unknown error'}`;
+    $issuesTitle.style.display = 'none';
+    $issues.innerHTML = '';
+    $notes.style.display = 'none';
+    return;
+  }
+
+  if (a.issues.length === 0) {
+    $allGood.style.display = 'block';
+    $issuesTitle.style.display = 'none';
+    $issues.innerHTML = '';
+    $notes.style.display = 'none';
+    return;
+  }
+
+  $allGood.style.display = 'none';
+  $issuesTitle.style.display = 'block';
+  $issues.innerHTML = a.issues.map(i => `
+    <div class="issue">
+      <div class="issue-head"><span class="issue-badge" style="background:${sc}">${esc(i.label)}</span><span class="issue-text" style="color:${sc}">✗ ${esc(i.issue)}</span></div>
+      <div class="issue-fix"><span class="fix-label">How to fix:</span> ${esc(i.fix)}</div>
+    </div>`).join('');
+
+  if (a.notes && a.notes.length) {
+    $notes.style.display = 'block';
+    $notes.innerHTML = `<div class="notes-title">Notes</div>` + a.notes.map(n => `<div class="note">• ${esc(n)}</div>`).join('');
+  } else {
+    $notes.style.display = 'none';
+    $notes.innerHTML = '';
+  }
+}
+
+function viewFullReport() {
+  if (!lastAudit) return;
+  const a = lastAudit;
+  const params = new URLSearchParams({
+    url: a.url,
+    score: a.score,
+    issues: JSON.stringify(a.issues),
+    passed: a.passed.count,
+    passedIds: (a.passed.ids || []).join(','),
+    stats: JSON.stringify(a.stats),
+    date: new Date().toISOString().slice(0,10),
+    clientName: splitDomainName(a.url),
+    examiner: 'Website Audit Tool',
+    certValid: a.certValid === true ? 'true' : a.certValid === false ? 'false' : '',
+    sslExpired: a.sslExpired ? 'true' : '',
+  });
+  window.open('/report?' + params.toString(), '_blank', 'width=960,height=800,menubar=no,toolbar=no');
+}
+
+function exportReport(format) {
+  if (!lastAudit) return;
+  const a = lastAudit;
+  const params = new URLSearchParams({
+    url: a.url,
+    score: a.score,
+    issues: JSON.stringify(a.issues),
+    passed: a.passed.count,
+    passedIds: (a.passed.ids || []).join(','),
+    stats: JSON.stringify(a.stats),
+    date: new Date().toISOString().slice(0,10),
+    clientName: splitDomainName(a.url),
+    examiner: 'Website Audit Tool',
+    certValid: a.certValid === true ? 'true' : a.certValid === false ? 'false' : '',
+    sslExpired: a.sslExpired ? 'true' : '',
+  });
+  if (format === 'pdf') {
+    window.open('/api/report/pdf?' + params.toString(), '_blank');
+  } else {
+    window.open('/api/report/html?' + params.toString(), '_blank');
+  }
+}
+
+function viewHtmlInTab() {
+  if (!lastAudit) return;
+  const a = lastAudit;
+  const params = new URLSearchParams({
+    url: a.url,
+    score: a.score,
+    issues: JSON.stringify(a.issues),
+    passed: a.passed.count,
+    passedIds: (a.passed.ids || []).join(','),
+    totalChecks: a.passed.total,
+    stats: JSON.stringify(a.stats),
+    date: new Date().toISOString().slice(0,10),
+    clientName: splitDomainName(a.url),
+    examiner: 'Website Audit Tool',
+    certValid: a.certValid === true ? 'true' : a.certValid === false ? 'false' : '',
+    sslExpired: a.sslExpired ? 'true' : '',
+    notes: JSON.stringify(a.notes || []),
+  });
+  const w = window.open('', '_blank');
+  if (w) {
+    w.document.write(`<!DOCTYPE html><html><head><title>Audit Report — ${esc(splitDomainName(a.url))}</title><style>body{font-family:system-ui,sans-serif;padding:20px;max-width:900px;margin:0 auto;background:#f8fafc;color:#0f172a;}@media print{body{background:#fff;}}</style></head><body></body></html>`);
+    w.document.close();
+    fetch('/api/report/html?' + params.toString())
+      .then(r => r.text())
+      .then(html => { w.document.open(); w.document.write(html); w.document.close(); })
+      .catch(err => { w.document.body.innerHTML = `<p style="color:red">Error: ${esc(err.message)}</p>`; });
+  }
+}
+
+function openUniversalAudit() {
+  if (!lastAudit) {
+    alert('Run an audit first before opening the Universal Audit Report.');
+    return;
+  }
+  const a = lastAudit;
+  const data = {
+    url: a.url,
+    score: a.score,
+    band: a.score >= 80 ? 'Excellent' : a.score >= 60 ? 'Fair' : a.score >= 40 ? 'Needs Work' : 'Poor',
+    passed: { count: a.passed.count, total: a.passed.total, ids: a.passed.ids || [] },
+    issues: a.issues,
+    stats: a.stats,
+    notes: a.notes || [],
+    certValid: a.certValid,
+    sslExpired: a.sslExpired === true,
+    date: new Date().toISOString().slice(0,10),
+    clientName: splitDomainName(a.url),
+    examiner: 'Website Audit Tool',
+    // Fill in the Universal methodology sections from the audit + page text
+    inferred: {
+      companyName: splitDomainName(a.url),
+      industry: 'Website / web service (auto-detected)',
+      location: 'Not specified — INFERRED — VERIFY WITH OWNER',
+      audience: 'Website visitors / customers',
+      strengths: a.score >= 60 ? ['Acceptable baseline score'] : [],
+      weaknesses: a.issues.filter(i => !i.pass).map(i => i.issue),
+      opportunities: a.issues.filter(i => !i.pass).map(i => ({ title: i.label, detail: i.fix })),
+      inferredItems: '- Business context inferred from audit results only — verify with owner.',
+    },
+    reputation: {
+      sources: [],
+      assessment: 'Not enough reputation data was found in this audit to form an assessment.',
+      fix: '',
+      actions: [],
+    },
+    competition: {
+      disclaimer: 'Competitor context is inferred from public search results for the service area and service type. It is not an exhaustive competitive audit and should be verified with the owner.',
+      competitors: [],
+      observations: [],
+      recommendations: [],
+    },
+    security: {
+      rows: (a.issues.filter(i => i.check === 'ssl-cert' || i.check === 'https' || i.check === 'dns-health').map(i => ({
+        observation: i.label + (i.check === 'ssl-cert' ? ' — SSL Certificate' : ''),
+        detail: i.issue,
+        confidence: 'HIGH (from audit engine)',
+      }))),
+      formNote: 'A quote/email/contact action may exist on the page. The audit did NOT test any form (no submission was performed).',
+      recommendations: a.issues.filter(i => i.check === 'ssl-cert' && !i.pass).map(i => i.fix),
+    },
+    ux: {
+      observations: a.issues.filter(i => i.check === 'viewport' || i.check === 'content-depth').map(i => ({
+        title: i.label,
+        detail: i.issue,
+      })),
+      recommendations: [],
+    },
+    bi: {
+      description: a.score >= 60 ? 'The site presents a reasonably functional web presence.' : 'The site has notable issues that should be addressed before further optimization.',
+      strengths: [],
+      weaknesses: a.issues.filter(i => !i.pass).map(i => i.issue),
+      opportunities: a.issues.filter(i => !i.pass).map(i => ({ title: i.label, detail: i.fix })),
+      marketContext: 'Not enough information to estimate market context in this audit.',
+      questions: ['Who is the primary audience for this website?', 'What business objectives should this site support?'],
+    },
+    recommendations: {
+      p1: a.issues.filter(i => !i.pass && (i.check === 'ssl-cert' || i.check === 'title' || i.check === 'meta-description')).map(i => i.fix),
+      p2: a.issues.filter(i => !i.pass && (i.check === 'content-depth' || i.check === 'image-alt' || i.check === 'structured-data' || i.check === 'cta' || i.check === 'local-seo' || i.check === 'credentials' || i.check === 'reviews')).map(i => i.fix),
+      p3: a.issues.filter(i => !i.pass && (i.check === 'analytics' || i.check === 'content-freshness')).map(i => i.fix),
+      rep: [],
+    },
+  };
+  // POST the JSON to the server, which saves it and returns a file path.
+  // Then open the interactive report page with that path.
+  fetch('/universal-report/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (res.error) {
+      alert('Failed to generate Universal Audit Report: ' + res.error);
+      return;
+    }
+    const dataPath = res.dataPath || '/reports/ua-latest.json';
+    window.open('/universal-report?dataPath=' + encodeURIComponent(dataPath), '_blank', 'width=1100,height=900,menubar=no,toolbar=no');
+  })
+  .catch(err => {
+    alert('Failed to contact the server: ' + err.message);
+  });
+}
+
+// Handle Enter key on input
+$urlInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); startAudit(e); }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Universal Website &amp; Business Audit Report</title>
+<style>
+  :root { --bg:#0f172a; --card:#1e293b; --fg:#f8fafc; --muted:#94a3b8; --border:#334155; --accent:#38bdf8; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.6; padding:24px; min-height:100vh; }
+  .wrap { max-width:980px; margin:0 auto; }
+
+  .topbar { display:flex; align-items:center; gap:14px; margin-bottom:18px; }
+  .back-btn { background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:8px; padding:6px 14px; font-size:0.8rem; cursor:pointer; text-decoration:none; font-family:inherit; transition:color 0.15s, border-color 0.15s; }
+  .back-btn:hover { color:var(--fg); border-color:var(--accent); }
+  .topbar-title { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.07em; font-weight:600; }
+  .topbar-badge { color:var(--accent); font-weight:600; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.07em; }
+
+  .cover { background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%); border:1px solid var(--border); border-radius:14px; padding:32px 36px; margin-bottom:24px; position:relative; overflow:hidden; }
+  .cover::before { content:""; position:absolute; top:-60px; right:-60px; width:200px; height:200px; background:radial-gradient(circle,rgba(56,189,248,0.08) 0%,transparent 70%); border-radius:50%; }
+  .cover-badge { display:inline-block; background:rgba(56,189,248,0.1); color:var(--accent); border:1px solid rgba(56,189,248,0.2); padding:4px 14px; border-radius:999px; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px; }
+  .cover h1 { font-size:1.9rem; font-weight:800; line-height:1.2; margin-bottom:4px; }
+  .cover-sub { color:var(--muted); font-size:0.88rem; margin-bottom:18px; }
+  .cover-meta { display:flex; gap:28px; flex-wrap:wrap; font-size:0.82rem; color:var(--muted); }
+  .cover-meta-item b { display:block; color:var(--fg); font-weight:600; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:2px; }
+
+  .score-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px 26px; display:flex; align-items:center; gap:30px; flex-wrap:wrap; margin-bottom:24px; }
+  .score-col { text-align:center; min-width:110px; }
+  .score-num { font-size:3.2rem; font-weight:800; line-height:1; }
+  .score-num small { font-size:1rem; color:var(--muted); }
+  .score-band { display:inline-block; margin-top:4px; border-radius:999px; padding:3px 12px; font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; }
+  .stat { display:flex; flex-direction:column; gap:1px; font-size:0.8rem; }
+  .stat-label { color:var(--muted); font-size:0.62rem; text-transform:uppercase; letter-spacing:0.06em; }
+  .stat-value { color:var(--fg); font-weight:600; font-size:0.95rem; }
+
+  h2 { font-size:0.74rem; font-weight:700; color:var(--fg); margin:24px 0 10px 0; padding-bottom:6px; border-bottom:1px solid var(--border); text-transform:uppercase; letter-spacing:0.06em; }
+
+  table { width:100%; border-collapse:collapse; background:var(--card); border-radius:10px; overflow:hidden; border:1px solid var(--border); margin-bottom:18px; }
+  th { background:#0f172a; color:var(--muted); font-size:0.66rem; text-transform:uppercase; letter-spacing:0.06em; font-weight:700; padding:9px 13px; text-align:left; }
+  td { padding:9px 13px; border-bottom:1px solid var(--border); font-size:0.82rem; vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  .col-label { font-weight:600; color:var(--fg); width:26%; }
+  .col-text { width:44%; }
+  .col-fix { width:30%; color:var(--muted); }
+  .col-fix code { display:inline-block; background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.2); color:var(--accent); padding:1px 6px; border-radius:4px; font-size:0.78rem; font-family:ui-monospace,Menlo,Consolas,monospace; word-break:break-all; }
+  tr.row-high td.col-text { color:#fca5a5; }
+  tr.row-med td.col-text { color:#fcd34d; }
+
+  ul.passed-list { list-style:none; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 20px; columns:2; column-gap:28px; }
+  ul.passed-list li { color:var(--muted); font-size:0.8rem; padding:3px 0; break-inside:avoid; }
+  ul.passed-list li::before { content:"✓ "; color:#22c55e; font-weight:700; }
+
+  .cert-warn { background:#450a0a; border:1px solid #991b1b; border-left:4px solid #dc2626; border-radius:8px; padding:11px 15px; margin-bottom:18px; font-size:0.82rem; color:#fca5a5; }
+  .cert-warn b { color:#fecaca; }
+
+  .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px; }
+  .info-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:16px 18px; }
+  .info-card h3 { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; font-weight:700; margin-bottom:8px; }
+  .info-card p, .info-card li { font-size:0.82rem; color:var(--fg); }
+  .info-card ul { padding-left:18px; }
+  .info-card li { padding:1px 0; }
+  .info-card strong { color:var(--fg); }
+  .single-col { grid-column:1 / -1; }
+
+  .note-item { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:0.82rem; color:var(--fg); }
+  .note-item::before { content:"• "; color:var(--accent); font-weight:700; }
+
+  .reputation-source { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:10px 14px; margin-bottom:8px; font-size:0.82rem; }
+  .reputation-source .src-name { font-weight:600; color:var(--fg); }
+  .reputation-source .src-detail { color:var(--muted); margin-top:2px; }
+
+  .loading { text-align:center; padding:80px 20px; color:var(--muted); }
+  .spinner { display:inline-block; width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; margin-bottom:12px; }
+  .loading p { margin-top:8px; font-size:0.85rem; }
+
+  .footer { margin-top:28px; padding-top:10px; border-top:1px solid var(--border); font-size:0.7rem; color:var(--muted); text-align:center; }
+
+  .print-bar { display:flex; gap:10px; justify-content:flex-end; margin-bottom:16px; }
+  .print-btn { background:transparent; color:var(--muted); border:1px solid var(--border); padding:6px 14px; border-radius:6px; font-size:0.78rem; cursor:pointer; font-family:inherit; transition:color 0.15s, border-color 0.15s; }
+  .print-btn:hover { color:var(--fg); border-color:var(--accent); }
+
+  @media print {
+    body { background:#fff; color:#0f172a; }
+    .print-bar, .topbar, .footer { display:none; }
+    .cover, .score-card, table, ul.passed-list, .cert-warn, .info-card, .note-item, .reputation-source { background:#fff; border-color:#cbd5e1; color:#0f172a; }
+    .cover-meta, .stat-label, th, .footer, .cover-badge, .score-band { color:#475569; }
+    .score-num { color: var(--sc, #16a34a); }
+    .score-band { color: var(--sc, #16a34a); background: var(--sc, #16a34a); border-color: var(--sc, #16a34a); }
+    td.col-text { color:#b91c1c; }
+    td.col-fix, td.col-label { color:#334155; }
+    ul.passed-list li { color:#475569; }
+    ul.passed-list li::before { color:#16a34a; }
+    .cert-warn { background:#fef2f2; border-color:#fca5a5; color:#991b1b; }
+    .cert-warn b { color:#dc2626; }
+    .note-item { background:#fff; border-color:#cbd5e1; color:#334155; }
+    .note-item::before { color:#0284c7; }
+    .reputation-source { background:#fff; border-color:#cbd5e1; color:#334155; }
+    .reputation-source .src-name { color:#0f172a; }
+    .wrap { padding:0; max-width:100%; }
+    * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="back-btn" href="/">← Back to audit tool</a>
+    <span class="topbar-title">Universal Website &amp; Business Audit</span>
+    <span class="topbar-badge">Full methodology report</span>
+  </div>
+  <div id="report-root">
+    <div class="loading">
+      <div class="spinner"></div>
+      <div>Loading report…</div>
+      <p style="margin-top:12px;font-size:0.8rem;color:#64748b;">Fetching the full methodology report from the server.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const root = document.getElementById('report-root');
+  if (!root) return;
+
+  const q = new URLSearchParams(window.location.search);
+  const dataPath = q.get('dataPath');
+
+  if (dataPath) {
+    // Load the stored JSON artifact and render the interactive report
+    fetch(dataPath)
+      .then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(renderFromJSON)
+      .catch(err => {
+        root.innerHTML = '<div style="text-align:center;padding:40px;color:#fca5a5;"><p>Failed to load report data: ' + esc(err.message) + '</p><p style="margin-top:8px;font-size:0.85rem;color:#64748b;"><a href="/" style="color:#38bdf8;">← Back to audit tool</a></p></div>';
+      });
+    return;
+  }
+
+  // If the server rendered the markdown inline, leave it.
+  if (root.children.length > 0 && root.querySelector('h1')) return;
+
+  // Nothing — leave the loading state (should not happen in normal use)
+  root.innerHTML = '<div style="text-align:center;padding:60px;color:#64748b;"><p>No report data available.</p><p style="margin-top:8px;font-size:0.85rem;"><a href="/" style="color:#38bdf8;">← Back to audit tool</a></p></div>';
+})();
+
+function renderFromJSON(d) {
+  const root = document.getElementById('report-root');
+  if (!root) return;
+
+  const sc = scoreColor(d.score);
+  document.documentElement.style.setProperty('--sc', sc);
+  const band = scoreBand(d.score);
+
+  // cover meta
+  const coverMeta = [
+    { label: 'Website', value: esc(d.url) },
+    { label: 'Audit date', value: esc(d.date) },
+    { label: 'Prepared by', value: esc(d.examiner) },
+    { label: 'Overall score', value: '<span style="color:' + sc + ';font-weight:700;font-size:1.05rem;">' + d.score + '/100 · ' + band + '</span>' },
+  ].map(m => '<div class="cover-meta-item"><b>' + m.label + '</b>' + m.value + '</div>').join('');
+
+  // issues table
+  const issues = d.issues || [];
+  const issueRows = issues.map(i => {
+    const cls = severityClass(i.repair || i.fix || '');
+    const fixCell = i.fix ? '<code>' + esc(i.fix) + '</code>' : '';
+    return '<tr class="' + cls + '"><td class="col-label">' + esc(i.label) + '</td><td class="col-text">' + esc(i.issue) + '</td><td class="col-fix">' + fixCell + '</td></tr>';
+  }).join('');
+
+  const issuesSection = issues.length === 0
+    ? '<div class="note-item" style="color:#22c55e;font-weight:600;border-color:#22c55e;">No issues found — this site is in great shape.</div>'
+    : '<table><thead><tr><th class="col-label">Check</th><th class="col-text">Issue</th><th class="col-fix">Recommended fix</th></tr></thead><tbody>' + issueRows + '</tbody></table>';
+
+  const passed = d.passed || { count: 0, total: 21, ids: [] };
+  const passedLabels = (passed.ids && passed.ids.length)
+    ? passed.ids.map(id => '<li>' + esc(id) + '</li>').join('')
+    : '<li>No checks passed yet</li>';
+
+  const certWarning = d.sslExpired
+    ? '<div class="cert-warn"><b>⚠ SSL certificate expired or invalid.</b> This site\'s security certificate has expired. Browsers will show a "Not Secure" warning. Renew the certificate (Let\'s Encrypt is free) as soon as possible.</div>'
+    : '';
+
+  const notes = d.notes || [];
+  const notesSection = notes.length
+    ? '<h2 style="margin-top:4px">Notes</h2>' + notes.map(n => '<div class="note-item">' + esc(n) + '</div>').join('')
+    : '';
+
+  // Build info cards
+  const cards = [];
+  const biz = d.inferred || {};
+
+  if (biz.companyName || biz.services || biz.areas || biz.industry) {
+    const c = ['<div class="info-card"><h3>Business Snapshot</h3>'];
+    if (biz.companyName) c.push('<p><strong>Business name:</strong> ' + esc(biz.companyName) + '</p>');
+    if (biz.industry) c.push('<p><strong>Industry:</strong> ' + esc(biz.industry) + '</p>');
+    if (biz.location) c.push('<p><strong>Primary location/market:</strong> ' + esc(biz.location) + '</p>');
+    if (biz.audience) c.push('<p><strong>Target audience:</strong> ' + esc(biz.audience) + '</p>');
+    if (biz.services && biz.services.length) {
+      c.push('<p><strong>Services identified:</strong></p><ul>' + biz.services.map(s => '<li>' + esc(s.name) + (s.source ? ' <span style="color:#64748b;font-size:0.72rem;">(' + esc(s.source) + ')</span>' : '') + '</li>').join('') + '</ul>');
+    }
+    if (biz.areas && biz.areas.length) {
+      c.push('<p><strong>Service areas:</strong></p><ul>' + biz.areas.map(a => '<li>' + esc(a.name) + (a.source ? ' <span style="color:#64748b;font-size:0.72rem;">(' + esc(a.source) + ')</span>' : '') + '</li>').join('') + '</ul>');
+    }
+    c.push('</div>');
+    cards.push(c.join(''));
+  }
+
+  if (biz.strengths && biz.strengths.length || biz.weaknesses && biz.weaknesses.length || biz.opportunities && biz.opportunities.length) {
+    const c = ['<div class="info-card"><h3>Strengths, Weaknesses & Opportunities</h3>'];
+    if (biz.strengths && biz.strengths.length) { c.push('<p><strong>Strengths:</strong></p><ul>' + biz.strengths.map(s => '<li>' + esc(s) + '</li>').join('') + '</ul>'); }
+    if (biz.weaknesses && biz.weaknesses.length) { c.push('<p><strong>Weaknesses:</strong></p><ul>' + biz.weaknesses.map(w => '<li>' + esc(w) + '</li>').join('') + '</ul>'); }
+    if (biz.opportunities && biz.opportunities.length) {
+      c.push('<p><strong>Highest-impact opportunities:</strong></p><ul>');
+      for (const o of biz.opportunities) {
+        const title = o.title ? esc(o.title) + ': ' : '';
+        c.push('<li><strong>' + title + '</strong> ' + esc(o.detail || '') + '</li>');
+      }
+      c.push('</ul>');
+    }
+    c.push('</div>');
+    cards.push(c.join(''));
+  }
+
+  const ctaIssue = (d.issues || []).find(i => i.check === 'cta');
+  if (ctaIssue) {
+    cards.push('<div class="info-card"><h3>Conversion & CTA</h3><p><strong>Summary:</strong> ' + esc(ctaIssue.issue) + '</p><p><strong>Recommended fix:</strong> ' + (ctaIssue.fix ? '<code>' + esc(ctaIssue.fix) + '</code>' : '') + '</p></div>');
+  }
+
+  const localIssue = (d.issues || []).find(i => i.check === 'local-seo');
+  const reviewIssue = (d.issues || []).find(i => i.check === 'reviews');
+  if (localIssue || reviewIssue) {
+    const c = ['<div class="info-card"><h3>Local SEO & Reviews Signals</h3>'];
+    if (localIssue) c.push('<p><strong>Local SEO:</strong> ' + esc(localIssue.issue) + '</p><p><strong>Fix:</strong> ' + (localIssue.fix ? '<code>' + esc(localIssue.fix) + '</code>' : '') + '</p>');
+    if (reviewIssue) c.push('<p><strong>Reviews & reputation:</strong> ' + esc(reviewIssue.issue) + '</p><p><strong>Fix:</strong> ' + (reviewIssue.fix ? '<code>' + esc(reviewIssue.fix) + '</code>' : '') + '</p>');
+    c.push('</div>');
+    cards.push(c.join(''));
+  }
+
+  const rep = d.reputation || {};
+  if (rep.sources && rep.sources.length) {
+    const c = ['<div class="info-card single-col"><h3>Reputation — Public Data Sources</h3>'];
+    for (const s of rep.sources) {
+      const url = s.url ? ' <span style="color:#38bdf8;">' + esc(s.url) + '</span>' : '';
+      c.push('<div class="reputation-source"><strong>' + esc(s.name) + ':</strong>' + url + '<div class="src-detail">' + esc(s.detail || '') + '</div></div>');
+    }
+    c.push('</div>');
+    cards.push(c.join(''));
+  }
+  if (rep.assessment) cards.push('<div class="info-card"><h3>Reputation Assessment</h3><p>' + esc(rep.assessment) + '</p></div>');
+  if (rep.actions && rep.actions.length) {
+    cards.push('<div class="info-card"><h3>Recommended Reputation Actions</h3><ul>' + rep.actions.map(a => '<li>' + esc(a) + '</li>').join('') + '</ul></div>');
+  }
+
+  const comp = d.competition || {};
+  if (comp.competitors && comp.competitors.length) {
+    cards.push('<div class="info-card single-col"><h3>Competitive Context</h3><p><em>' + esc(comp.disclaimer || '') + '</em></p><h4>Competitors observed</h4><ul>' + comp.competitors.map(c => '<li><strong>' + esc(c.name) + '</strong> — ' + esc(c.detail || '') + (c.source ? ' <span style="color:#64748b;font-size:0.72rem;">(' + esc(c.source) + ')</span>' : '') + '</li>').join('') + '</ul></div>');
+  }
+  if (comp.observations && comp.observations.length) {
+    cards.push('<div class="info-card"><h3>Competitive Observations</h3><ul>' + comp.observations.map(o => '<li>' + esc(o) + '</li>').join('') + '</ul></div>');
+  }
+  if (comp.recommendations && comp.recommendations.length) {
+    cards.push('<div class="info-card"><h3>Competitive Positioning Recommendations</h3><ul>' + comp.recommendations.map(r => '<li>' + esc(r) + '</li>').join('') + '</ul></div>');
+  }
+
+  const ux = d.ux || {};
+  if (ux.observations && ux.observations.length) {
+    cards.push('<div class="info-card"><h3>UX / UI Observations</h3><ul>' + ux.observations.map(o => '<li><strong>' + esc(o.title) + '</strong> — ' + esc(o.detail) + '</li>').join('') + '</ul></div>');
+  }
+  if (ux.recommendations && ux.recommendations.length) {
+    cards.push('<div class="info-card"><h3>UX Recommendations</h3><ul>' + ux.recommendations.map(r => '<li>' + esc(r) + '</li>').join('') + '</ul></div>');
+  }
+
+  const sec = d.security || {};
+  if (sec.rows && sec.rows.length) {
+    const rows = sec.rows.map(r => '<tr><td class="col-label" style="width:24%">' + esc(r.observation) + '</td><td class="col-text" style="width:50%">' + esc(r.detail) + '</td><td class="col-fix" style="width:26%">' + esc(r.confidence) + '</td></tr>').join('');
+    cards.push('<div class="info-card single-col"><h3>Security / Cybersecurity Observations</h3><table><thead><tr><th class="col-label">Observation</th><th class="col-text">Detail</th><th class="col-fix">Confidence</th></tr></thead><tbody>' + rows + '</tbody></table></div>');
+  }
+  if (sec.formNote) {
+    cards.push('<div class="info-card"><h3>Form / Data Collection Note</h3><p>' + esc(sec.formNote) + '</p></div>');
+  }
+  if (sec.recommendations && sec.recommendations.length) {
+    cards.push('<div class="info-card"><h3>Security Recommendations</h3><ul>' + sec.recommendations.map(r => '<li>' + esc(r) + '</li>').join('') + '</ul></div>');
+  }
+
+  const bi = d.bi || {};
+  if (bi.description) cards.push('<div class="info-card"><h3>What the Business Appears to Be</h3><p>' + esc(bi.description) + '</p></div>');
+  if (bi.marketContext) cards.push('<div class="info-card"><h3>Estimated Market Context</h3><p>' + esc(bi.marketContext) + '</p></div>');
+  if (bi.questions && bi.questions.length) {
+    cards.push('<div class="info-card"><h3>Questions for the Owner</h3><ul>' + bi.questions.map(q => '<li>' + esc(q) + '</li>').join('') + '</ul></div>');
+  }
+
+  const rec = d.recommendations || {};
+  const recParts = [];
+  if (rec.p1 && rec.p1.length) recParts.push('<div class="info-card"><h3>Priority 1 — Do This Week</h3><ul>' + rec.p1.map(r => '<li>' + esc(r) + '</li>').join('') + '</ul></div>');
+  if (rec.p2 && rec.p2.length) recParts.push('<div class="info-card"><h3>Priority 2 — Do This Month</h3><ul>' + rec.p2.map(r => '<li>' + esc(r) + '</li>').join('') + '</ul></div>');
+  if (rec.p3 && rec.p3.length) recParts.push('<div class="info-card"><h3>Priority 3 — Do This Quarter</h3><ul>' + rec.p3.map(r => '<li>' + esc(r) + '</li>').join('') + '</ul></div>');
+  if (rec.rep && rec.rep.length) recParts.push('<div class="info-card"><h3>Reputation Follow-up (Separate Track)</h3><ul>' + rec.rep.map(r => '<li>' + esc(r) + '</li>').join('') + '</ul></div>');
+  if (recParts.length) cards.push('<div class="info-card single-col"><h3>Recommendations — Prioritized</h3>' + recParts.join('') + '</div>');
+
+  root.innerHTML =
+    '<div class="print-bar"><button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button></div>' +
+    '<div class="cover">' +
+      '<div class="cover-badge">Universal Website & Business Audit Report</div>' +
+      '<h1>' + esc(biz.companyName || (d.url || '').replace(/^https?:\/\//, '').replace(/\/.*/, '').replace(/\.[^.]+$/, '').replace(/[^a-z0-9 ]/gi, ' ') || 'Website') + '</h1>' +
+      '<div class="cover-sub">Comprehensive technical, SEO, security, UX, marketing, and business audit</div>' +
+      '<div class="cover-meta">' + coverMeta + '</div>' +
+    '</div>' +
+    '<div class="score-card">' +
+      '<div class="score-col"><div class="score-num" style="color:' + sc + '">' + d.score + '<small>/100</small></div><div class="score-band" style="background:' + sc + '20;color:' + sc + ';border:1px solid ' + sc + '40;">' + band + '</div></div>' +
+      '<div class="stat"><span class="stat-label">Checks passed</span><span class="stat-value">' + passed.count + ' / ' + passed.total + '</span></div>' +
+      '<div class="stat"><span class="stat-label">Issues found</span><span class="stat-value">' + issues.length + '</span></div>' +
+      '<div class="stat"><span class="stat-label">Response time</span><span class="stat-value">' + (d.stats?.responseMs ?? 0) + 'ms</span></div>' +
+      '<div class="stat"><span class="stat-label">Page size</span><span class="stat-value">' + (d.stats?.htmlKB ?? 0) + ' KB</span></div>' +
+      '<div class="stat"><span class="stat-label">Word count</span><span class="stat-value">' + (d.stats?.wordCount ?? 0) + ' words</span></div>' +
+      '<div class="stat"><span class="stat-label">HTTP status</span><span class="stat-value">' + (d.stats?.httpStatus ?? 0) + '</span></div>' +
+    '</div>' +
+    certWarning +
+    '<h2>' + (issues.length ? 'Issues Found & Recommended Fixes' : 'Audit Results') + '</h2>' +
+    issuesSection +
+    (passed.count > 0 ? '<h2 style="margin-top:4px">Checks That Passed (' + passed.count + '/' + passed.total + ')</h2><ul class="passed-list">' + passedLabels + '</ul>' : '') +
+    notesSection +
+    (cards.length ? '<h2>Report Details</h2>' + cards.join('') : '') +
+    '<div class="footer">This report was generated by ' + esc(d.examiner || 'Website Audit Tool') + ' on ' + esc(d.date) + ' using the Universal Website + Business Audit Agent methodology. Scores are based on automated checks covering SEO, mobile usability, performance, security, accessibility, brand, conversion, local SEO, credentials, and reputation signals. Results reflect the site\'s state at the time of the audit.</div>';
+}
+
+function scoreColor(s) {
+  if (s >= 80) return '#16a34a';
+  if (s >= 60) return '#ca8a04';
+  if (s >= 40) return '#ea580c';
+  return '#dc2626';
+}
+
+function scoreBand(s) {
+  if (s >= 80) return 'Excellent';
+  if (s >= 60) return 'Fair';
+  if (s >= 40) return 'Needs Work';
+  return 'Poor';
+}
+
+function severityClass(text) {
+  const t = (text || '').toLowerCase();
+  if (/cannot|unreachable|fail|error|blocked|expir|missing|no http|no https|no <|no <h1>|no click|no review|not mobile|not found|no credential|no testimonial|no blog|no service area|no phone|no address|only 1|thin content|low content|too short|too long|no analytics|no structured|no open graph|no canonical/i.test(t)) return 'row-high';
+  if (/consider|could|weak|limited|fewer|outdated|stale|generic|couldn't|not leveraged|underutil|only 2|only 4|4\/6/i.test(t)) return 'row-med';
+  return '';
+}
+
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>

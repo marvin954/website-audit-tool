@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Website Audit Report</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    background:#0f172a; color:#f8fafc;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    line-height:1.55; min-height:100vh;
+  }
+  .wrap { max-width:900px; margin:0 auto; padding:24px; }
+
+  .print-bar { display:flex; gap:10px; justify-content:flex-end; margin-bottom:16px; }
+  .print-btn {
+    background:transparent; color:#94a3b8; border:1px solid #334155;
+    padding:6px 14px; border-radius:6px; font-size:0.78rem; cursor:pointer;
+    font-family:inherit; transition:color 0.15s, border-color 0.15s;
+  }
+  .print-btn:hover { color:#f8fafc; border-color:#38bdf8; }
+
+  .header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding-bottom:12px; margin-bottom:20px; border-bottom:1px solid #334155;
+  }
+  .header-back {
+    background:transparent; color:#94a3b8; border:1px solid #334155;
+    padding:6px 14px; border-radius:8px; font-size:0.8rem; cursor:pointer;
+    font-family:inherit; text-decoration:none; display:inline-flex; align-items:center;
+    gap:6px; transition:color 0.15s, border-color 0.15s;
+  }
+  .header-back:hover { color:#f8fafc; border-color:#38bdf8; }
+  .header-title { font-size:0.75rem; color:#64748b; text-transform:uppercase; letter-spacing:0.06em; font-weight:600; }
+  .header-badge { color:#38bdf8; font-weight:600; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.06em; }
+
+  .cover {
+    background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
+    border:1px solid #334155; border-radius:14px; padding:36px 40px;
+    margin-bottom:24px; position:relative; overflow:hidden;
+  }
+  .cover::before {
+    content:""; position:absolute; top:-50px; right:-50px; width:180px; height:180px;
+    background:radial-gradient(circle,rgba(56,189,248,0.10) 0%,transparent 70%);
+    border-radius:50%;
+  }
+  .cover-badge {
+    display:inline-block; background:rgba(56,189,248,0.12); color:#38bdf8;
+    border:1px solid rgba(56,189,248,0.25); padding:4px 14px; border-radius:999px;
+    font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em;
+    margin-bottom:18px;
+  }
+  .cover h1 { font-size:2rem; font-weight:800; color:#f8fafc; line-height:1.2; margin-bottom:4px; }
+  .cover-sub { color:#94a3b8; font-size:0.9rem; margin-bottom:20px; }
+  .cover-meta { display:flex; gap:28px; flex-wrap:wrap; font-size:0.82rem; color:#94a3b8; }
+  .cover-meta-item b {
+    display:block; color:#f8fafc; font-weight:600; font-size:0.7rem;
+    text-transform:uppercase; letter-spacing:0.06em; margin-bottom:2px;
+  }
+
+  .score-card {
+    background:#1e293b; border:1px solid #334155; border-radius:12px;
+    padding:20px 26px; display:flex; align-items:center; gap:28px; flex-wrap:wrap;
+    margin-bottom:24px;
+  }
+  .score-big { text-align:center; min-width:110px; }
+  .score-number { font-size:3.2rem; font-weight:800; line-height:1; }
+  .score-number small { font-size:1rem; color:#94a3b8; }
+  .score-band {
+    display:inline-block; margin-top:4px; border-radius:999px; padding:3px 12px;
+    font-size:0.72rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em;
+  }
+  .stat { display:flex; flex-direction:column; gap:1px; font-size:0.8rem; }
+  .stat-label { color:#64748b; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.06em; }
+  .stat-value { color:#f8fafc; font-weight:600; font-size:0.95rem; }
+
+  h2 {
+    font-size:0.74rem; font-weight:700; color:#f8fafc; margin:24px 0 10px 0;
+    padding-bottom:6px; border-bottom:1px solid #334155;
+    text-transform:uppercase; letter-spacing:0.06em;
+  }
+
+  .issues-section { margin-bottom:24px; }
+  table { width:100%; border-collapse:collapse; background:#1e293b; border-radius:10px; overflow:hidden; border:1px solid #334155; }
+  th {
+    background:#0f172a; color:#94a3b8; font-size:0.68rem; text-transform:uppercase;
+    letter-spacing:0.06em; font-weight:700; padding:10px 14px; text-align:left;
+  }
+  td { padding:10px 14px; border-bottom:1px solid #334155; font-size:0.82rem; vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  td.issue-label { font-weight:600; color:#f8fafc; width:26%; }
+  td.issue-text { width:38%; }
+  td.issue-fix { width:36%; color:#94a3b8; }
+  td.issue-fix code {
+    display:inline-block; background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.2);
+    color:#7dd3fc; padding:1px 6px; border-radius:4px; font-size:0.78rem;
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; word-break:break-all; margin-top:4px;
+  }
+  tr.severity-high td.issue-text { color:#fca5a5; }
+  tr.severity-med td.issue-text { color:#fcd34d; }
+  tr.severity-low td.issue-text { color:#94a3b8; }
+
+  ul.passed-list {
+    list-style:none; background:#1e293b; border:1px solid #334155;
+    border-radius:10px; padding:14px 20px; columns:2; column-gap:24px;
+  }
+  ul.passed-list li { color:#94a3b8; font-size:0.8rem; padding:2px 0; break-inside:avoid; }
+  ul.passed-list li::before { content:"✓ "; color:#22c55e; font-weight:700; }
+
+  .cert-warn {
+    background:#450a0a; border:1px solid #991b1b; border-left:4px solid #dc2626;
+    border-radius:8px; padding:10px 14px; margin-bottom:18px; font-size:0.8rem; color:#fca5a5;
+  }
+  .cert-warn b { color:#fecaca; }
+
+  .note-item {
+    background:#1e293b; border:1px solid #334155; border-radius:8px;
+    padding:10px 14px; margin-bottom:8px; font-size:0.82rem; color:#cbd5e1;
+  }
+  .note-item::before { content:"• "; color:#38bdf8; font-weight:700; }
+
+  .footer {
+    margin-top:28px; padding-top:10px; border-top:1px solid #334155;
+    font-size:0.7rem; color:#64748b; text-align:center;
+  }
+
+  @media print {
+    body { background:#fff; color:#0f172a; }
+    .print-bar, .header-back { display:none; }
+    .cover, .score-card, table, ul.passed-list, .cert-warn, .note-item { background:#fff; border-color:#cbd5e1; color:#0f172a; }
+    .cover-meta, .stat-label, th, .footer, .cover-badge, .score-band { color:#475569; }
+    .score-number { color: var(--sc, #16a34a); }
+    .score-band { color: var(--sc, #16a34a); background: var(--sc, #16a34a); border-color: var(--sc, #16a34a); }
+    td.issue-text { color:#b91c1c; }
+    td.issue-fix, td.issue-label { color:#334155; }
+    ul.passed-list li { color:#475569; }
+    ul.passed-list li::before { color:#16a34a; }
+    .cert-warn { background:#fef2f2; border-color:#fca5a5; color:#991b1b; }
+    .cert-warn b { color:#dc2626; }
+    .note-item { background:#fff; border-color:#cbd5e1; color:#334155; }
+    .note-item::before { color:#0284c7; }
+    .wrap { padding:0; max-width:100%; }
+    * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Dynamically rendered by server-side renderCustomerReport, or filled client-side from URL params -->
+  <div id="report-root"></div>
+</div>
+
+<script>
+// Client-side fill when /report is opened without server-side params
+(function () {
+  const root = document.getElementById('report-root');
+  if (!root) return;
+
+  const q = new URLSearchParams(window.location.search);
+
+  // If server already rendered content, the root will be populated.
+  // If not, try to fill from URL params.
+  if (root.children.length === 0) {
+    const required = ['url', 'score', 'issues', 'passed', 'date', 'clientName', 'examiner'];
+    if (!required.every(k => q.has(k))) {
+      root.innerHTML = `<div style="text-align:center;padding:60px 20px;color:#64748b;">
+        <div style="font-size:2rem;margin-bottom:12px;">📄</div>
+        <div>No report data found.</div>
+        <div style="margin-top:8px;font-size:0.85rem;">Run an audit from the Website Audit Tool first.</div>
+        <div style="margin-top:16px;"><a href="/" style="color:#38bdf8;">← Back to audit tool</a></div>
+      </div>`;
+      return;
+    }
+
+    // Build the report from URL params
+    const issues = JSON.parse(q.get('issues') || '[]');
+    const passedCount = parseInt(q.get('passed') || '0', 10);
+    const passedIds = (q.get('passedIds') || '').split(',').filter(Boolean);
+    const totalChecks = 21;
+    const passed = {
+      count: passedCount,
+      total: totalChecks,
+      ids: passedIds,
+    };
+    const stats = JSON.parse(q.get('stats') || '{"responseMs":0,"htmlKB":0,"wordCount":0,"httpStatus":0}');
+    const score = parseInt(q.get('score') || '0', 10);
+    const date = q.get('date');
+    const clientName = q.get('clientName') || q.get('url').replace(/^https?:\/\//, '').replace(/\/.*/, '').replace(/\.[^.]+$/, '');
+    const examiner = q.get('examiner');
+    const certValid = q.get('certValid') === 'true' ? true : q.get('certValid') === 'false' ? false : undefined;
+    const sslExpired = certValid === false || q.get('sslExpired') === 'true';
+
+    // Inherit CSS variables from the page
+    const sc = (function () {
+      const s = score;
+      if (s >= 80) return '#16a34a';
+      if (s >= 60) return '#ca8a04';
+      if (s >= 40) return '#ea580c';
+      return '#dc2626';
+    })();
+    document.documentElement.style.setProperty('--sc', sc);
+
+    function esc(s) {
+      return String(s ?? '')
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function scoreBand(s) {
+      if (s >= 80) return 'Excellent';
+      if (s >= 60) return 'Fair';
+      if (s >= 40) return 'Needs Work';
+      return 'Poor';
+    }
+
+    function severityClass(text) {
+      const t = (text || '').toLowerCase();
+      if (/cannot|unreachable|fail|error|blocked|expir|missing|no http|no https|no <|no <h1>|no click|no review|not mobile|not found|no credential|no testimonial|no blog|no service area|no phone|no address|only 1|thin content|low content|too short|too long/i.test(t)) return 'severity-high';
+      if (/consider|could|weak|limited|fewer|outdated|stale|generic|couldn.t|not leveraged|underutil/i.test(t)) return 'severity-med';
+      return 'severity-low';
+    }
+
+    const band = scoreBand(score);
+
+    const issueRows = issues.map(i => `
+      <tr class="${severityClass(i.repair || i.fix || '')}">
+        <td class="issue-label">${esc(i.label)}</td>
+        <td class="issue-text">${esc(i.issue)}</td>
+        <td class="issue-fix">${i.fix ? `<code>${esc(i.fix)}</code>` : ''}</td>
+      </tr>`).join('');
+
+    const passedLabels = passed.count > 0 && passed.ids.length > 0
+      ? passed.ids.map(id => `<li>${esc(id)}</li>`).join('')
+      : `<li>No checks passed yet</li>`;
+
+    const certWarning = sslExpired
+      ? `<div class="cert-warn"><b>⚠ SSL certificate expired.</b> This site's security certificate has expired. Browsers will show a "Not Secure" warning to visitors. Renew the certificate (Let's Encrypt is free) as soon as possible.</div>`
+      : '';
+
+    const notesSection = '';
+
+    root.innerHTML = `
+      <div class="print-bar">
+        <button class="print-btn" onclick="window.print()">🖨 Print / Save PDF</button>
+      </div>
+      <div class="header">
+        <a class="header-back" href="javascript:history.back()">← Back to audit tool</a>
+        <span class="header-title">Website Audit Report</span>
+        <span class="header-badge">${esc(examiner)}</span>
+      </div>
+      <div class="cover">
+        <div class="cover-badge">Website Audit Report</div>
+        <h1>${esc(clientName)}</h1>
+        <div class="cover-sub">Website health &amp; SEO audit</div>
+        <div class="cover-meta">
+          <div class="cover-meta-item"><b>Website</b>${esc(q.get('url'))}</div>
+          <div class="cover-meta-item"><b>Audit date</b>${esc(date)}</div>
+          <div class="cover-meta-item"><b>Prepared by</b>${esc(examiner)}</div>
+          <div class="cover-meta-item"><b>Overall score</b><span style="color:${sc};font-weight:700;font-size:1.05rem;">${score}/100 · ${band}</span></div>
+        </div>
+      </div>
+      <div class="score-card">
+        <div class="score-big">
+          <div class="score-number" style="color:${sc}">${score}<small>/100</small></div>
+          <div class="score-band" style="background:${sc}20;color:${sc};border:1px solid ${sc}40;">${band}</div>
+        </div>
+        <div class="stat"><span class="stat-label">Checks passed</span><span class="stat-value">${passed.count} / ${passed.total}</span></div>
+        <div class="stat"><span class="stat-label">Issues found</span><span class="stat-value">${issues.length}</span></div>
+        <div class="stat"><span class="stat-label">Response time</span><span class="stat-value">${stats.responseMs}ms</span></div>
+        <div class="stat"><span class="stat-label">Page size</span><span class="stat-value">${stats.htmlKB} KB</span></div>
+        <div class="stat"><span class="stat-label">Word count</span><span class="stat-value">${stats.wordCount} words</span></div>
+        <div class="stat"><span class="stat-label">HTTP status</span><span class="stat-value">${stats.httpStatus}</span></div>
+      </div>
+      ${certWarning}
+      ${issues.length === 0
+        ? `<div class="issues-section"><h2>Issues Found &amp; Recommended Fixes</h2>
+            <div class="note-item" style="color:#22c55e;font-weight:600;border-color:#22c55e;">No issues found — this site is in great shape.</div></div>`
+        : `<div class="issues-section"><h2>Issues Found &amp; Recommended Fixes</h2>
+            <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th style="width:26%;">Check</th><th style="width:38%;">Issue</th><th style="width:36%;">Recommended fix</th></tr></thead>
+              <tbody>${issueRows}</tbody>
+            </table>
+            </div></div>`}
+      <h2 style="margin-top:8px">Checks That Passed (${passed.count}/${passed.total})</h2>
+      <ul class="passed-list">${passedLabels}</ul>
+      ${notesSection}
+      <div class="footer">This report was generated by ${esc(examiner)} on ${esc(date)}. Scores are based on automated checks covering SEO, mobile usability, performance, security, and accessibility. Results reflect the site's state at the time of the audit.</div>
+    `;
+  }
+})();
+</script>
+</body>
+</html>

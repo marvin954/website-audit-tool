@@ -1,0 +1,12 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Website Audit Tool
+Comment=Fetch any website and get a plain-English audit report with fixes
+Exec=/home/mammba/Projects/website-audit-tool/node /home/mammba/Projects/website-audit-tool/src/audit.js %U
+Icon=website-audit-tool
+Terminal=true
+Categories=Development;Internet;Utility;
+Keywords=SEO;audit;website;inspection;
+StartupNotify=false
