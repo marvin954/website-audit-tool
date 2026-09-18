@@ -82,7 +82,7 @@ app.post("/universal-report/run", async (req, res) => {
       ? { ...r.json, markdown: r.markdown || "" }
       : { markdown: r.markdown || "", sections: r.sections, status: r.status };
     const id = storeReport(artifact);
-    res.json({ ok: true, markdown: r.markdown, dataPath: "/reports/" + id + ".json" });
+    res.json({ ok: true, markdown: r.markdown, dataPath: "/reports/" + id + ".json", artifact });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -490,8 +490,13 @@ function openUniversalAudit() {
       alert('Failed to generate Universal Audit Report: ' + res.error);
       return;
     }
-    const dataPath = res.dataPath || '/reports/ua-latest.json';
-    window.open('/universal-report?dataPath=' + encodeURIComponent(dataPath), '_blank', 'width=1100,height=900,menubar=no,toolbar=no');
+    // Store the artifact inline so the report page can load it from localStorage
+    // without requiring a server-side file (serverless envs have a read-only FS).
+    const key = res.dataPath ? res.dataPath.split('/').pop().replace('.json', '') : ('ua-' + Date.now());
+    if (res.artifact) {
+      try { localStorage.setItem('report-' + key, JSON.stringify(res.artifact)); } catch (_) {}
+    }
+    window.open('/universal-report?localKey=' + encodeURIComponent(key) + '&dataPath=' + encodeURIComponent(res.dataPath || ''), '_blank', 'width=1100,height=900,menubar=no,toolbar=no');
   })
   .catch(err => {
     alert('Failed to contact the server: ' + err.message);

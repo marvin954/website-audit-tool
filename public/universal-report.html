@@ -123,10 +123,22 @@
   if (!root) return;
 
   const q = new URLSearchParams(window.location.search);
+  const localKey = q.get('localKey');
   const dataPath = q.get('dataPath');
 
+  // Prefer localStorage (works in serverless envs where the FS is read-only).
+  if (localKey) {
+    try {
+      const raw = localStorage.getItem('report-' + localKey);
+      if (raw) {
+        renderFromJSON(JSON.parse(raw));
+        return;
+      }
+    } catch (_) {}
+  }
+
   if (dataPath) {
-    // Load the stored JSON artifact and render the interactive report
+    // Fallback: fetch from the server endpoint (works when server has shared memory/FS).
     fetch(dataPath)
       .then(r => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
