@@ -1,7 +1,7 @@
 // server.js — lightweight web UI for the Website Audit Tool + Universal Audit Agent
 import express from "express";
 import { createServer } from "node:http";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -12,6 +12,7 @@ import { auditUrl } from "./src/audit.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPORT_DIR = join(__dirname, "public", "reports");
+mkdirSync(REPORT_DIR, { recursive: true });
 
 const app = express();
 app.use(express.json({ limit: "5mb" }));
