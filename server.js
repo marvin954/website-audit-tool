@@ -1,7 +1,7 @@
 // server.js — lightweight web UI for the Website Audit Tool + Universal Audit Agent
 import express from "express";
 import { createServer } from "node:http";
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -11,8 +11,20 @@ import { runUniversalAudit } from "./src/universal-audit-agent.js";
 import { auditUrl } from "./src/audit.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPORT_DIR = join(__dirname, "public", "reports");
-mkdirSync(REPORT_DIR, { recursive: true });
+
+// In-memory report store — avoids filesystem writes in read-only serverless envs.
+// Reports are keyed by a timestamp-based ID and expire after 1 hour.
+const reportStore = new Map();
+const REPORT_TTL_MS = 60 * 60 * 1000;
+function storeReport(artifact) {
+  const id = `ua-${Date.now()}`;
+  reportStore.set(id, { artifact, expiresAt: Date.now() + REPORT_TTL_MS });
+  // Evict expired entries on each write (cheap; reports are infrequent)
+  for (const [k, v] of reportStore) {
+    if (v.expiresAt < Date.now()) reportStore.delete(k);
+  }
+  return id;
+}
 
 const app = express();
 app.use(express.json({ limit: "5mb" }));
@@ -69,13 +81,22 @@ app.post("/universal-report/run", async (req, res) => {
     const artifact = r.json
       ? { ...r.json, markdown: r.markdown || "" }
       : { markdown: r.markdown || "", sections: r.sections, status: r.status };
-    const fname = `ua-${Date.now()}.json`;
-    const fpath = join(REPORT_DIR, fname);
-    writeFileSync(fpath, JSON.stringify(artifact, null, 2), "utf8");
-    res.json({ ok: true, markdown: r.markdown, dataPath: "/reports/" + fname });
+    const id = storeReport(artifact);
+    res.json({ ok: true, markdown: r.markdown, dataPath: "/reports/" + id + ".json" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Serve in-memory report artifacts by ID
+app.get("/reports/:id.json", (req, res) => {
+  const entry = reportStore.get(req.params.id);
+  if (!entry || entry.expiresAt < Date.now()) {
+    res.status(404).json({ error: "Report not found or expired" });
+    return;
+  }
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.json(entry.artifact);
 });
 
 // Serve the full audit report page (in-app view)
@@ -150,8 +171,6 @@ app.get("/api/report/pdf", async (req, res) => {
 // Serve static assets (JS, CSS, images) from public/
 app.use(express.static(join(__dirname, "public")));
 
-// Serve saved report JSON artifacts (for the interactive page to load)
-app.use("/reports", express.static(join(__dirname, "public", "reports")));
 
 // Run a standard audit and return JSON (used by the UI "Audit Site" button)
 app.post("/api/audit", async (req, res) => {
