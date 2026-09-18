@@ -8,6 +8,7 @@ import { dirname, join } from "node:path";
 import { renderCustomerReport } from "./src/report-standalone.js";
 import { generatePdf } from "./src/export-report.js";
 import { runUniversalAudit } from "./src/universal-audit-agent.js";
+import { auditUrl } from "./src/audit.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPORT_DIR = join(__dirname, "public", "reports");
@@ -150,6 +151,21 @@ app.use(express.static(join(__dirname, "public")));
 
 // Serve saved report JSON artifacts (for the interactive page to load)
 app.use("/reports", express.static(join(__dirname, "public", "reports")));
+
+// Run a standard audit and return JSON (used by the UI "Audit Site" button)
+app.post("/api/audit", async (req, res) => {
+  const { url, timeoutMs } = req.body ?? {};
+  if (!url || typeof url !== "string") {
+    res.status(400).json({ error: "url is required" });
+    return;
+  }
+  try {
+    const a = await auditUrl(url, { timeoutMs: Number(timeoutMs) || 20000 });
+    res.json(a);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 const PORT = Number(process.env.PORT) || 3000;
 const server = createServer(app);
